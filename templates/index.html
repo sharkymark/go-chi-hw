@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Commission Calculator</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css">
+    <link rel="icon" href="/static/favicon.ico">
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Enter Commission Details (quarterly)</h2>
+    <form method="post">
+        <div class="form-group">
+            <label for="quota">Quota:</label>
+            <input type="number" step="any" name="quota" id="quota" value="250000" required>
+        </div>
+        <div class="form-group">
+            <label for="variable_comp">Variable Compensation Portion:</label>
+            <input type="number" step="any" name="variable_comp" id="variable_comp" value="35000" required>
+        </div>
+        <div class="form-group">
+            <label for="deal_revenue">Deal Revenue:</label>
+            <input type="number" step="any" name="deal_revenue" id="deal_revenue" value="" required>
+        </div>
+        <input type="submit" value="Calculate" class="submit-button">
+    </form>
+</div>
+
+    <hr>
+    <h2>Commission Records</h2>
+    <form action="/delete-row" method="post">
+    <table>
+        <tr>
+            <th>Action</th>
+            <th>Created At</th>  
+            <th>Commission</th>          
+            <th>Quota Attainment</th>
+            <th>Quota</th>                      
+            <th>Variable Comp</th>
+            <th>Variable Rate</th>
+        </tr>
+        {{ range . }}
+        <tr>
+            <td><input type="checkbox" name="commission_ids" value="{{ .ID }}"></td>
+            <td>{{ .CreatedAt }}</td>
+            <td>{{ formatMoney .CommissionAmt }}</td>
+            <td>{{ .Attainment }}%</td>
+            <td>{{ formatMoney .Quota }}</td>
+            <td>{{ formatMoney .VariableComp }}</td>
+            <td>{{ formatAsPercent .VariableRate }}</td>
+        </tr>
+        {{ end }}
+        <input type="submit" value="Delete Selected">
+    </br></br>
+        </table></form>
+    </table>
+</form>
+</body>
+</html>
