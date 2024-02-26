@@ -3,13 +3,13 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
-	"log"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -24,6 +24,7 @@ type Commission struct {
 	Attainment    float64
 	VariableComp  float64
 	Quota         float64
+	DealRevenue   float64
 	CreatedAt     time.Time
 }
 
@@ -40,7 +41,7 @@ func main() {
 	defer db.Close()
 
 	// Create the commissions table if it doesn't exist
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS commissions (id INTEGER PRIMARY KEY, variable_rate REAL, commission_amt REAL, attainment REAL, variable_comp REAL, quota REAL, created_at TIMESTAMP)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS commissions (id INTEGER PRIMARY KEY, variable_rate REAL, commission_amt REAL, attainment REAL, variable_comp REAL, quota REAL, deal_revenue REAL, created_at TIMESTAMP)")
 	if err != nil {
 		panic(err)
 	}
@@ -68,64 +69,63 @@ func main() {
 // FileServer conveniently sets up a http.FileServer handler to serve
 // static files from a http.FileSystem.
 func FileServer(r chi.Router, path string, root http.FileSystem) {
-    if strings.ContainsAny(path, "{}*") {
-        panic("FileServer does not permit URL parameters.")
-    }
+	if strings.ContainsAny(path, "{}*") {
+		panic("FileServer does not permit URL parameters.")
+	}
 
-    // Strip '/static/' from the path
-    fs := http.StripPrefix(path, http.FileServer(root))
+	// Strip '/static/' from the path
+	fs := http.StripPrefix(path, http.FileServer(root))
 
-    if path != "/" && path[len(path)-1] != '/' {
-        r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
-        path += "/"
-    }
-    path += "*"
+	if path != "/" && path[len(path)-1] != '/' {
+		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
+		path += "/"
+	}
+	path += "*"
 
-    // Note that we are using chi's router here to register the route
-    r.Get(path, func(w http.ResponseWriter, r *http.Request) {
-        fs.ServeHTTP(w, r)
-    })
+	// Note that we are using chi's router here to register the route
+	r.Get(path, func(w http.ResponseWriter, r *http.Request) {
+		fs.ServeHTTP(w, r)
+	})
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-    // Retrieve commissions from the database
-    rows, err := db.Query("SELECT * FROM commissions")
-    if err != nil {
-        http.Error(w, err.Error(), 500)
-        return
-    }
-    defer rows.Close()
+	// Retrieve commissions from the database
+	rows, err := db.Query("SELECT * FROM commissions")
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer rows.Close()
 
-    var commissions []Commission
-    for rows.Next() {
-        var c Commission
-        if err := rows.Scan(&c.ID, &c.VariableRate, &c.CommissionAmt, &c.Attainment, &c.VariableComp, &c.Quota, &c.CreatedAt); err != nil {
-            http.Error(w, err.Error(), 500)
-            return
-        }
-        commissions = append(commissions, c)
-    }
+	var commissions []Commission
+	for rows.Next() {
+		var c Commission
+		if err := rows.Scan(&c.ID, &c.VariableRate, &c.CommissionAmt, &c.Attainment, &c.VariableComp, &c.Quota, &c.DealRevenue, &c.CreatedAt); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		commissions = append(commissions, c)
+	}
 
-    tmpl := template.New("index.html").Funcs(template.FuncMap{
-        "formatAsPercent": func(v float64) string {
-            return fmt.Sprintf("%.2f%%", v*100)
-        },
+	tmpl := template.New("index.html").Funcs(template.FuncMap{
+		"formatAsPercent": func(v float64) string {
+			return fmt.Sprintf("%.2f%%", v*100)
+		},
 		"formatMoney": func(amount float64) string {
 			return fmt.Sprintf("$%.2f", amount)
 		},
-    })
+	})
 
-    // Correctly initialize and parse the template
-    tmpl, err = tmpl.ParseFiles("./templates/index.html")
-    if err != nil {
-        http.Error(w, err.Error(), 500)
-        return
-    }
+	// Correctly initialize and parse the template
+	tmpl, err = tmpl.ParseFiles("./templates/index.html")
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
-    // Execute the template with the commissions data
-    tmpl.Execute(w, commissions)
+	// Execute the template with the commissions data
+	tmpl.Execute(w, commissions)
 }
-
 
 func SubmitCommissionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
@@ -146,8 +146,8 @@ func SubmitCommissionHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Save to database
 		log.Println("Attempting to insert commission into database")
-		_, err := db.Exec("INSERT INTO commissions (variable_rate, commission_amt, attainment, variable_comp, quota, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-			variableRate, commissionAmt, attainment, variableComp, quota, time.Now())
+		_, err := db.Exec("INSERT INTO commissions (variable_rate, commission_amt, attainment, variable_comp, quota, deal_revenue, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			variableRate, commissionAmt, attainment, variableComp, quota, dealRevenue, time.Now())
 		if err != nil {
 			log.Println("Error inserting commission into database:", err)
 			http.Error(w, err.Error(), 500)

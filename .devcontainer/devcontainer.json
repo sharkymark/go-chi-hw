@@ -1,21 +1,21 @@
 {
-    "name": "Go Chi Development",
-    "build": {
-      "dockerfile": "../Dockerfile",
-      "context": "."
-    },
-    "customizations": {
-      "vscode": {
-        "extensions": [
-          "golang.go"
-        ]
-        }  
-    }, 
-    "containerEnv": {
-    },
-    "postCreateCommand": "bash -c '[ ! -f go.mod ] && go mod init go-chi-hw || true; go mod tidy'",
-    "postStartCommand": "bash -c 'go build -o main . && ./main'",
-    "forwardPorts": [8080]
+  "name": "Go Chi Development",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "."
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go"
+      ]
+      }  
+  }, 
+  "containerEnv": {
+  },
+  "postCreateCommand": "bash -c '[ ! -f go.mod ] && go mod init go-chi-hw || true; go mod tidy'",
+  "postStartCommand": "bash -c 'go build -o main . && ./main'",
+  "forwardPorts": [8080]
 }
 
   

@@ -35,7 +35,8 @@
             <th>Created At</th>  
             <th>Commission</th>          
             <th>Quota Attainment</th>
-            <th>Quota</th>                      
+            <th>Quota</th>   
+            <th>Deal Revenue</th>                   
             <th>Variable Comp</th>
             <th>Variable Rate</th>
         </tr>
@@ -46,6 +47,7 @@
             <td>{{ formatMoney .CommissionAmt }}</td>
             <td>{{ .Attainment }}%</td>
             <td>{{ formatMoney .Quota }}</td>
+            <td>{{ formatMoney .DealRevenue }}</td>
             <td>{{ formatMoney .VariableComp }}</td>
             <td>{{ formatAsPercent .VariableRate }}</td>
         </tr>
